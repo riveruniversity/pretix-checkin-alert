@@ -54,7 +54,7 @@ To use red flag functionality:
 ### Setup
 
 ```bash
-git clone https://github.com/river-creative/pretix-checkin-alert.git
+git clone https://github.com/riveruniversity/pretix-checkin-alert.git
 cd pretix-checkin-alert
 pip install -e .
 ```
@@ -71,7 +71,7 @@ Apache License 2.0
 
 ## Support
 
-For issues and feature requests, please use the [GitHub issue tracker](https://github.com/river-creative/pretix-checkin-alert/issues).
+For issues and feature requests, please use the [GitHub issue tracker](https://github.com/riveruniversity/pretix-checkin-alert/issues).
 
 ## Author
 
