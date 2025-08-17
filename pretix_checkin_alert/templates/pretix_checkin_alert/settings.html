@@ -12,18 +12,17 @@
     
     <h1>{% trans "Check-in Alert System" %}</h1>
     
-    <div class="alert alert-info">
-        <p>
-            {% trans "This plugin sends email notifications for security-relevant check-in events." %}
-        </p>
-        <p>
-            <strong>{% trans "Notifications will be sent when:" %}</strong>
-        </p>
-        <ul>
-            <li>{% trans "Someone attempts to check in with a BLOCKED ticket (check-in is denied, notification sent)" %}</li>
-            <li>{% trans "Someone checks in who has content in a hidden answer field with identifier 'red_flags' (check-in is allowed, notification sent)" %}</li>
-        </ul>
-    </div>
+    <p>
+        {% trans "This plugin sends email notifications for security-relevant check-in events." %}
+    </p>
+    <p>
+        <strong>{% trans "Notifications will be sent when:" %}</strong>
+    </p>
+    <ul>
+        <li>{% trans "Someone attempts to check in with a BLOCKED ticket (check-in is denied, notification sent)" %}</li>
+        <li>{% trans "Someone checks in who has content in a hidden answer field with identifier 'red_flags' (check-in is allowed, notification sent)" %}</li>
+    </ul>
+
     
     <form action="" method="post" class="form-horizontal" id="checkin-alert-settings-form"
           mail-preview-url="{% url 'plugins:pretix_checkin_alert:settings' organizer=request.event.organizer.slug event=request.event.slug %}">
