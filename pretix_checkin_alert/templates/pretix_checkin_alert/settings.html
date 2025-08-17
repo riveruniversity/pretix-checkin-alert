@@ -1,0 +1,264 @@
+{% extends "pretixcontrol/event/settings_base.html" %}
+{% load i18n %}
+{% load bootstrap3 %}
+{% load static %}
+{% load compress %}
+
+{% block title %}{% trans "Check-in Alert System" %}{% endblock %}
+
+{% block inside %}
+    <link rel="stylesheet" type="text/css" href="{% static "pretix_checkin_alert/checkin-alert.css" %}">
+    <script type="text/javascript" src="{% static "pretix_checkin_alert/checkin-alert.js" %}"></script>
+    
+    <h1>{% trans "Check-in Alert System" %}</h1>
+    
+    <div class="alert alert-info">
+        <p>
+            {% trans "This plugin sends email notifications for security-relevant check-in events." %}
+        </p>
+        <p>
+            <strong>{% trans "Notifications will be sent when:" %}</strong>
+        </p>
+        <ul>
+            <li>{% trans "Someone attempts to check in with a BLOCKED ticket (check-in is denied, notification sent)" %}</li>
+            <li>{% trans "Someone checks in who has content in a hidden answer field with identifier 'red_flags' (check-in is allowed, notification sent)" %}</li>
+        </ul>
+    </div>
+    
+    <form action="" method="post" class="form-horizontal" id="checkin-alert-settings-form"
+          mail-preview-url="{% url 'plugins:pretix_checkin_alert:settings' organizer=request.event.organizer.slug event=request.event.slug %}">
+        {% csrf_token %}
+        {% bootstrap_form_errors form %}
+        
+        <fieldset>
+            <legend>{% trans "Configuration" %}</legend>
+            {% bootstrap_field form.checkin_alert_enabled layout="control" %}
+            <div data-display-dependency="#id_checkin_alert_enabled">
+                {% bootstrap_field form.checkin_alert_notification_email layout="control" %}
+                {% bootstrap_field form.checkin_alert_from_name layout="control" %}
+            </div>
+        </fieldset>
+        
+        <div data-display-dependency="#id_checkin_alert_enabled">
+            <fieldset class="email-templates-section">
+                <legend>{% trans "Email Templates" %}</legend>
+            
+            <!-- Tab Navigation -->
+            <ul class="nav nav-tabs" role="tablist">
+                <li role="presentation" class="active">
+                    <a href="#redflag-template" aria-controls="redflag-template" role="tab" data-toggle="tab">
+                        {% trans "Red Flag Template" %}
+                    </a>
+                </li>
+                <li role="presentation">
+                    <a href="#blocked-template" aria-controls="blocked-template" role="tab" data-toggle="tab">
+                        {% trans "Blocked Ticket Template" %}
+                    </a>
+                </li>
+            </ul>
+            
+            <!-- Tab Content -->
+            <div class="tab-content email-templates-content">
+                <!-- Red Flag Template Tab -->
+                <div role="tabpanel" class="tab-pane active" id="redflag-template">
+                    <div class="panel panel-default">
+                        <div class="panel-body">
+                            <!-- Inner tabs for Edit/Preview -->
+                            <ul class="nav nav-pills" role="tablist">
+                                <li role="presentation" class="active">
+                                    <a href="#redflag-edit" aria-controls="redflag-edit" role="tab" data-toggle="tab">
+                                        <i class="fa fa-edit"></i> {% trans "Edit" %}
+                                    </a>
+                                </li>
+                                <li role="presentation">
+                                    <a href="#redflag-preview" aria-controls="redflag-preview" role="tab" data-toggle="tab" class="preview-tab" data-template-type="redflag">
+                                        <i class="fa fa-eye"></i> {% trans "Preview" %}
+                                    </a>
+                                </li>
+                            </ul>
+                            
+                            <div class="tab-content inner-tab-content">
+                                <!-- Edit Tab -->
+                                <div role="tabpanel" class="tab-pane active" id="redflag-edit">
+                                    {% bootstrap_field form.checkin_alert_redflag_subject layout="control" %}
+                                    {% bootstrap_field form.checkin_alert_redflag_body layout="control" %}
+                                    
+                                    <div class="form-group">
+                                        <label class="control-label col-md-3">{% trans "Available placeholders" %}</label>
+                                        <div class="col-md-9">
+                                            <div class="placeholders-container">
+                                                <button type="button" class="btn btn-xs btn-default placeholder-btn" data-placeholder="{event_name}" data-target="redflag">
+                                                    <code>{event_name}</code>
+                                                </button>
+                                                <button type="button" class="btn btn-xs btn-default placeholder-btn" data-placeholder="{attendee_name}" data-target="redflag">
+                                                    <code>{attendee_name}</code>
+                                                </button>
+                                                <button type="button" class="btn btn-xs btn-default placeholder-btn" data-placeholder="{attendee_email}" data-target="redflag">
+                                                    <code>{attendee_email}</code>
+                                                </button>
+                                                <button type="button" class="btn btn-xs btn-default placeholder-btn" data-placeholder="{order_code}" data-target="redflag">
+                                                    <code>{order_code}</code>
+                                                </button>
+                                                <button type="button" class="btn btn-xs btn-default placeholder-btn" data-placeholder="{product}" data-target="redflag">
+                                                    <code>{product}</code>
+                                                </button>
+                                                <button type="button" class="btn btn-xs btn-default placeholder-btn" data-placeholder="{variation}" data-target="redflag">
+                                                    <code>{variation}</code>
+                                                </button>
+                                                <button type="button" class="btn btn-xs btn-default placeholder-btn" data-placeholder="{checkin_time}" data-target="redflag">
+                                                    <code>{checkin_time}</code>
+                                                </button>
+                                                <button type="button" class="btn btn-xs btn-default placeholder-btn" data-placeholder="{checkin_list}" data-target="redflag">
+                                                    <code>{checkin_list}</code>
+                                                </button>
+                                                <button type="button" class="btn btn-xs btn-default placeholder-btn" data-placeholder="{flag_reasons}" data-target="redflag">
+                                                    <code>{flag_reasons}</code>
+                                                </button>
+                                            </div>
+                                            <p class="help-block">{% trans "Click on placeholders to insert them into the body field above." %}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Preview Tab -->
+                                <div role="tabpanel" class="tab-pane" id="redflag-preview">
+                                    <div class="preview-container">
+                                        <div class="well">
+                                            <div class="preview-loading text-center hidden">
+                                                <i class="fa fa-spinner fa-spin fa-2x"></i>
+                                                <p>{% trans "Generating preview..." %}</p>
+                                            </div>
+                                            <div class="preview-content">
+                                                <div class="email-preview-subject">
+                                                    <strong>{% trans "Subject:" %}</strong>
+                                                    <div class="preview-subject-text">{% trans "Click Preview tab to generate" %}</div>
+                                                </div>
+                                                <hr>
+                                                <div class="email-preview-body">
+                                                    <strong>{% trans "Body:" %}</strong>
+                                                    <div class="preview-body-html">
+                                                        <p class="text-muted">{% trans "Preview will appear here" %}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Blocked Ticket Template Tab -->
+                <div role="tabpanel" class="tab-pane" id="blocked-template">
+                    <div class="panel panel-default">
+                        <div class="panel-body">
+                            <!-- Inner tabs for Edit/Preview -->
+                            <ul class="nav nav-pills" role="tablist">
+                                <li role="presentation" class="active">
+                                    <a href="#blocked-edit" aria-controls="blocked-edit" role="tab" data-toggle="tab">
+                                        <i class="fa fa-edit"></i> {% trans "Edit" %}
+                                    </a>
+                                </li>
+                                <li role="presentation">
+                                    <a href="#blocked-preview" aria-controls="blocked-preview" role="tab" data-toggle="tab" class="preview-tab" data-template-type="blocked">
+                                        <i class="fa fa-eye"></i> {% trans "Preview" %}
+                                    </a>
+                                </li>
+                            </ul>
+                            
+                            <div class="tab-content inner-tab-content">
+                                <!-- Edit Tab -->
+                                <div role="tabpanel" class="tab-pane active" id="blocked-edit">
+                                    {% bootstrap_field form.checkin_alert_blocked_subject layout="control" %}
+                                    {% bootstrap_field form.checkin_alert_blocked_body layout="control" %}
+                                    
+                                    <div class="form-group">
+                                        <label class="control-label col-md-3">{% trans "Available placeholders" %}</label>
+                                        <div class="col-md-9">
+                                            <div class="placeholders-container">
+                                                <button type="button" class="btn btn-xs btn-default placeholder-btn" data-placeholder="{event_name}" data-target="blocked">
+                                                    <code>{event_name}</code>
+                                                </button>
+                                                <button type="button" class="btn btn-xs btn-default placeholder-btn" data-placeholder="{attendee_name}" data-target="blocked">
+                                                    <code>{attendee_name}</code>
+                                                </button>
+                                                <button type="button" class="btn btn-xs btn-default placeholder-btn" data-placeholder="{attendee_email}" data-target="blocked">
+                                                    <code>{attendee_email}</code>
+                                                </button>
+                                                <button type="button" class="btn btn-xs btn-default placeholder-btn" data-placeholder="{order_code}" data-target="blocked">
+                                                    <code>{order_code}</code>
+                                                </button>
+                                                <button type="button" class="btn btn-xs btn-default placeholder-btn" data-placeholder="{product}" data-target="blocked">
+                                                    <code>{product}</code>
+                                                </button>
+                                                <button type="button" class="btn btn-xs btn-default placeholder-btn" data-placeholder="{variation}" data-target="blocked">
+                                                    <code>{variation}</code>
+                                                </button>
+                                                <button type="button" class="btn btn-xs btn-default placeholder-btn" data-placeholder="{checkin_time}" data-target="blocked">
+                                                    <code>{checkin_time}</code>
+                                                </button>
+                                                <button type="button" class="btn btn-xs btn-default placeholder-btn" data-placeholder="{checkin_list}" data-target="blocked">
+                                                    <code>{checkin_list}</code>
+                                                </button>
+                                                <button type="button" class="btn btn-xs btn-default placeholder-btn" data-placeholder="{flag_reasons}" data-target="blocked">
+                                                    <code>{flag_reasons}</code>
+                                                </button>
+                                            </div>
+                                            <p class="help-block">{% trans "Click on placeholders to insert them into the body field above." %}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Preview Tab -->
+                                <div role="tabpanel" class="tab-pane" id="blocked-preview">
+                                    <div class="preview-container">
+                                        <div class="well">
+                                            <div class="preview-loading text-center hidden">
+                                                <i class="fa fa-spinner fa-spin fa-2x"></i>
+                                                <p>{% trans "Generating preview..." %}</p>
+                                            </div>
+                                            <div class="preview-content">
+                                                <div class="email-preview-subject">
+                                                    <strong>{% trans "Subject:" %}</strong>
+                                                    <div class="preview-subject-text">{% trans "Click Preview tab to generate" %}</div>
+                                                </div>
+                                                <hr>
+                                                <div class="email-preview-body">
+                                                    <strong>{% trans "Body:" %}</strong>
+                                                    <div class="preview-body-html">
+                                                        <p class="text-muted">{% trans "Preview will appear here" %}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </fieldset>
+        </div>
+        
+        <div class="form-group submit-group">
+            <button type="submit" class="btn btn-primary btn-save">
+                {% trans "Save" %}
+            </button>
+        </div>
+    </form>
+    
+    <div class="alert alert-warning setup-instructions">
+        <p>
+            <strong>{% trans "Setup Instructions:" %}</strong>
+        </p>
+        <ol>
+            <li>{% trans "Enable the notifications using the checkbox above" %}</li>
+            <li>{% trans "Enter one or more email addresses to receive notifications (comma-separated)" %}</li>
+            <li>{% trans "Enter a 'From' name for the notification emails (optional)" %}</li>
+            <li>{% trans "For red flag warnings: create a question with identifier 'red_flags' and mark it as hidden" %}</li>
+            <li>{% trans "For blocked tickets: use Pretix's ticket blocking feature - attempts to check in will be denied and trigger notifications" %}</li>
+        </ol>
+    </div>
+{% endblock %}

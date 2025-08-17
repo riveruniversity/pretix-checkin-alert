@@ -1,0 +1,42 @@
+[project]
+name = "pretix-checkin-alert"
+dynamic = ["version"]
+description = "Real-time email alerts for security-sensitive check-in events in pretix"
+readme = "README.rst"
+license = {text = "Apache"}
+keywords = ["pretix"]
+authors = [
+    {name = "River Creative", email = "creative@revival.com"},
+]
+maintainers = [
+    {name = "River Creative", email = "creative@revival.com"},
+]
+
+dependencies = [
+]
+
+[project.entry-points."pretix.plugin"]
+pretix_checkin_alert = "pretix_checkin_alert:PretixPluginMeta"
+
+[project.entry-points."distutils.commands"]
+build = "pretix_plugin_build.build:CustomBuild"
+
+[build-system]
+requires = [
+    "setuptools",
+    "pretix-plugin-build",
+]
+
+[project.urls]
+homepage = "https://github.com/river-creative/pretix-checkin-alert"
+repository = "https://github.com/river-creative/pretix-checkin-alert"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = {attr = "pretix_checkin_alert.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["pretix*"]
+namespaces = false

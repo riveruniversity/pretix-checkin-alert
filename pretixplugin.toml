@@ -1,0 +1,5 @@
+[plugin]
+package = "checkin-alert"
+modules = [ "pretix_checkin_alert" ]
+marketplace_name = "checkin-alert"
+
